@@ -30,4 +30,6 @@ export type RootStackParamList = {
   PatientDetail: { patientId: number };
   AddPatient: undefined;
   AddResult: { patientId: number };
+  Statistics: undefined;
+  Settings: undefined;
 };

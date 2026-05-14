@@ -79,7 +79,7 @@ export default function PatientListScreen({ navigation }: Props) {
         contentContainerStyle={styles.listContent}
         renderItem={({ item: pacjent }) => (
           <Card style={styles.card} mode="elevated" onPress={() => navigation.navigate('PatientDetail', { patientId: pacjent.id ?? 0 })}>
-            <Card.Content style={styles.cardContent}>
+            <Card.Content style={[styles.cardContent, { paddingVertical: 4 }]}>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{`${pacjent.lastName} ${pacjent.firstName}`}</Text>
                 <Text style={styles.cardSubtitle}>{`PESEL: ${pacjent.pesel}`}</Text>
@@ -139,6 +139,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 8,
     marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#1976D2',
   },
   cardContent: {
     flexDirection: 'row',

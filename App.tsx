@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Animated } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MD3LightTheme, PaperProvider } from 'react-native-paper';
@@ -12,6 +13,9 @@ import HomeScreen from './src/screens/HomeScreen';
 import PatientDetailScreen from './src/screens/PatientDetailScreen';
 import PatientListScreen from './src/screens/PatientListScreen';
 import HomeButton from './src/components/HomeButton';
+import StatisticsScreen from './src/screens/StatisticsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import SplashScreen from './src/components/SplashScreen';
 import type { RootStackParamList } from './src/types';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -42,12 +46,33 @@ const navigationTheme = {
 };
 
 export default function App() {
+  const [isReady, setIsReady] = useState(false);
+  const splashOpacity = new Animated.Value(1);
+
   useEffect(() => {
     initDB().catch((error) => {
       console.error('Failed to initialize database', error);
     });
+    // Minimum 1500ms delay before showing main app
+    const timer = setTimeout(() => {
+      Animated.timing(splashOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsReady(true);
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
+  if (!isReady) {
+    return (
+      <Animated.View style={{ flex: 1, opacity: splashOpacity }}>
+        <SplashScreen />
+      </Animated.View>
+    );
+  }
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
@@ -68,6 +93,8 @@ export default function App() {
             <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Pacjent', headerRight: () => <HomeButton /> }} />
             <Stack.Screen name="AddPatient" component={AddPatientScreen} options={{ title: 'Nowy Pacjent', headerRight: () => <HomeButton /> }} />
             <Stack.Screen name="AddResult" component={AddResultScreen} options={{ title: 'Nowe Wyniki', headerRight: () => <HomeButton /> }} />
+                      <Stack.Screen name="Statistics" component={StatisticsScreen} options={{ title: 'Statystyki', headerRight: () => <HomeButton /> }} />
+                      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Ustawienia', headerRight: () => <HomeButton /> }} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

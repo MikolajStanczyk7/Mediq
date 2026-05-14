@@ -142,3 +142,23 @@ export async function insertResult(wynikBadania: Result): Promise<number> {
     throw error;
   }
 }
+
+// Usuwamy wszystkie wyniki badań.
+export async function deleteAllResults(): Promise<void> {
+  try {
+    await db.runAsync('DELETE FROM results');
+  } catch (error) {
+    console.error('Failed to delete all results', error);
+    throw error;
+  }
+}
+
+// Usuwamy wszystkich pacjentów i ich wyniki (cascade delete).
+export async function deleteAllPatients(): Promise<void> {
+  try {
+    await db.runAsync('DELETE FROM patients');
+  } catch (error) {
+    console.error('Failed to delete all patients', error);
+    throw error;
+  }
+}

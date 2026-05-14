@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, Divider, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { RootStackParamList } from '../types';
@@ -16,6 +16,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
+
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Mediq</Text>
+        <IconButton icon="cog" iconColor="#1976D2" size={24} onPress={() => navigation.navigate('Settings')} />
+      </View>
+
       <View style={styles.hero}>
         <Text style={styles.emoji}>🏥</Text>
         <Text style={styles.title}>Mediq</Text>
@@ -29,6 +35,10 @@ export default function HomeScreen() {
         <Button mode="contained" contentStyle={styles.buttonContent} style={styles.button} onPress={() => navigation.navigate('AddPatient')}>
           ➕ Dodaj Pacjenta
         </Button>
+        <Button mode="contained" contentStyle={styles.buttonContent} style={styles.button} onPress={() => navigation.navigate('Statistics')}>
+          📊 Statystyki
+        </Button>
+        <Divider style={styles.divider} />
       </View>
 
       <Text style={styles.credit}>Złota Apka 2025 • Kalisz</Text>
@@ -43,7 +53,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingVertical: 16,
+  },
+  header: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1976D2',
   },
   hero: {
     alignItems: 'center',
@@ -70,13 +92,17 @@ const styles = StyleSheet.create({
   button: {
     width: '80%',
     borderRadius: 8,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   buttonContent: {
     paddingVertical: 8,
   },
+  divider: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
   credit: {
     color: '#9E9E9E',
-    fontSize: 12,
+    fontSize: 13,
   },
 });
