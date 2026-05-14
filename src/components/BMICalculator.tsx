@@ -3,6 +3,13 @@ import { Text } from 'react-native-paper';
 
 import { getResultColor } from '../utils/resultNorms';
 
+// Stałe do obliczeń BMI
+const BMI_MIN_DISPLAY = 10;
+const BMI_MAX_RANGE = 30;
+const BMI_UNDERWEIGHT = 18.5;
+const BMI_NORMAL_MAX = 25;
+const BMI_OVERWEIGHT_MAX = 30;
+
 type Props = {
   weight?: number;
   height?: number;
@@ -16,15 +23,15 @@ const colors = {
 
 // Dobieramy prosty opis BMI, żeby wynik był czytelny dla użytkownika.
 function getBmiLabel(bmi: number): string {
-  if (bmi < 18.5) {
+  if (bmi < BMI_UNDERWEIGHT) {
     return 'Niedowaga';
   }
 
-  if (bmi < 25) {
+  if (bmi < BMI_NORMAL_MAX) {
     return 'Prawidłowa waga';
   }
 
-  if (bmi < 30) {
+  if (bmi < BMI_OVERWEIGHT_MAX) {
     return 'Nadwaga';
   }
 
@@ -40,7 +47,7 @@ export default function BMICalculator({ weight, height }: Props) {
   const wskaznikBmi = weight / Math.pow(height / 100, 2);
   const kluczKoloru = getResultColor('bmi', wskaznikBmi);
   const kolor = colors[kluczKoloru];
-  const szerokoscPaska = `${Math.max(0, Math.min(100, ((wskaznikBmi - 10) / 30) * 100))}%`;
+  const szerokoscPaska = `${Math.max(0, Math.min(100, ((wskaznikBmi - BMI_MIN_DISPLAY) / BMI_MAX_RANGE) * 100))}%`;
 
   return (
     <View style={styles.container}>

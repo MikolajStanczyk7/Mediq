@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     alignSelf: 'flex-start',
-    marginTop: 8,
+    marginBottom: 8,
   },
   dot: {
     width: 10,

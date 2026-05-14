@@ -7,6 +7,7 @@ import { ActivityIndicator, Button, Card, Dialog, Divider, Portal, Snackbar, Tex
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { deletePatient, getPatientById, getResultsByPatient } from '../database/db';
+import BMICalculator from '../components/BMICalculator';
 import ResultChart from '../components/ResultChart';
 import { getResultColor } from '../utils/resultNorms';
 import type { Patient, Result, RootStackParamList } from '../types';
@@ -19,13 +20,15 @@ const colorMap = {
   red: '#D32F2F',
 } as const;
 
-// Formatujemy datę wyników na bardziej czytelny zapis.
+// Formatujemy datę wyników na bardziej czytelny zapis z godziną.
 function formatDate(value: string): string {
   const date = new Date(value);
   const dzien = String(date.getDate()).padStart(2, '0');
   const miesiac = String(date.getMonth() + 1).padStart(2, '0');
   const rok = date.getFullYear();
-  return `${dzien}.${miesiac}.${rok}`;
+  const godzina = String(date.getHours()).padStart(2, '0');
+  const minuta = String(date.getMinutes()).padStart(2, '0');
+  return `${dzien}.${miesiac}.${rok} ${godzina}:${minuta}`;
 }
 
 export default function PatientDetailScreen({ navigation, route }: Props) {
@@ -48,6 +51,9 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
       const zaladowaneWyniki = await getResultsByPatient(patientId);
       setPatient(zaladowanyPacjent);
       setResults(zaladowaneWyniki);
+
+      // Debugowanie: logujemy ID pacjenta i liczbę wyników
+      console.log(`PatientDetailScreen loaded - patientId: ${patientId}, results count: ${zaladowaneWyniki.length}`);
 
       if (zaladowanyPacjent) {
         navigation.setOptions({ title: `${zaladowanyPacjent.firstName} ${zaladowanyPacjent.lastName}` });
@@ -132,29 +138,69 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
         {posortowaneWyniki.length === 0 ? (
           <View style={styles.centerStateInline}>
             <Text style={styles.emptyEmoji}>📋</Text>
-            <Text style={styles.emptyText}>Brak wyników{`\n`}Dodaj pierwsze badanie</Text>
+            <Text style={styles.emptyText}>Brak wyników{`\n`}Dodaj pierwsze badanie →</Text>
           </View>
         ) : (
           posortowaneWyniki.map((wynikBadania) => {
-            const kolorGlukozy = wynikBadania.glucose != null ? colorMap[getResultColor('glucose', wynikBadania.glucose)] : colorMap.green;
-            const kolorCisnienia = wynikBadania.systolic != null ? colorMap[getResultColor('systolic', wynikBadania.systolic)] : colorMap.green;
+            const kolorGlukozy = wynikBadania.glucose != null ? colorMap[getResultColor('glucose', wynikBadania.glucose)] : undefined;
+            const kolorCisnienia = wynikBadania.systolic != null ? colorMap[getResultColor('systolic', wynikBadania.systolic)] : undefined;
+            const kolorCholestorolu = wynikBadania.cholesterol != null ? colorMap[getResultColor('cholesterol', wynikBadania.cholesterol)] : undefined;
+            const wskaznikBmi = wynikBadania.weight && wynikBadania.height ? wynikBadania.weight / Math.pow(wynikBadania.height / 100, 2) : undefined;
+            const kolorBmi = wskaznikBmi != null ? colorMap[getResultColor('bmi', wskaznikBmi)] : undefined;
 
             return (
               <Card key={wynikBadania.id ?? wynikBadania.date} style={styles.resultCard} mode="elevated">
                 <Card.Content>
                   <Text style={styles.resultDate}>{formatDate(wynikBadania.date)}</Text>
+                  
                   {wynikBadania.glucose != null ? (
                     <View style={styles.resultRow}>
                       <View style={[styles.dot, { backgroundColor: kolorGlukozy }]} />
-                      <Text style={styles.resultText}>{`Glukoza: ${wynikBadania.glucose}`}</Text>
+                      <Text style={styles.resultText}>{`Glukoza: ${wynikBadania.glucose} mg/dL`}</Text>
                     </View>
                   ) : null}
+                  
                   {wynikBadania.systolic != null || wynikBadania.diastolic != null ? (
                     <View style={styles.resultRow}>
                       <View style={[styles.dot, { backgroundColor: kolorCisnienia }]} />
-                      <Text style={styles.resultText}>{`Ciśnienie: ${wynikBadania.systolic ?? '-'} / ${wynikBadania.diastolic ?? '-'}`}</Text>
+                      <Text style={styles.resultText}>{`Ciśnienie: ${wynikBadania.systolic ?? '-'} / ${wynikBadania.diastolic ?? '-'} mmHg`}</Text>
                     </View>
                   ) : null}
+                  
+                  {wynikBadania.cholesterol != null ? (
+                    <View style={styles.resultRow}>
+                      <View style={[styles.dot, { backgroundColor: kolorCholestorolu }]} />
+                      <Text style={styles.resultText}>{`Cholesterol: ${wynikBadania.cholesterol} mg/dL`}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {wynikBadania.weight != null ? (
+                    <View style={styles.resultRow}>
+                      <View style={[styles.dot, { backgroundColor: '#9E9E9E' }]} />
+                      <Text style={styles.resultText}>{`Waga: ${wynikBadania.weight} kg`}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {wynikBadania.height != null ? (
+                    <View style={styles.resultRow}>
+                      <View style={[styles.dot, { backgroundColor: '#9E9E9E' }]} />
+                      <Text style={styles.resultText}>{`Wzrost: ${wynikBadania.height} cm`}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {wskaznikBmi != null ? (
+                    <View style={styles.resultRow}>
+                      <View style={[styles.dot, { backgroundColor: kolorBmi }]} />
+                      <Text style={styles.resultText}>{`BMI: ${wskaznikBmi.toFixed(1)}`}</Text>
+                    </View>
+                  ) : null}
+                  
+                  {wynikBadania.notes ? (
+                    <View style={styles.resultRow}>
+                      <Text style={styles.resultText}>{`Notatki: ${wynikBadania.notes}`}</Text>
+                    </View>
+                  ) : null}
+                  
                   {wynikBadania.photoUri ? (
                     <Pressable style={styles.photoThumbWrap} onPress={() => setSelectedPhoto(wynikBadania.photoUri ?? '')}>
                       <Image source={{ uri: wynikBadania.photoUri }} style={styles.photoThumb} />

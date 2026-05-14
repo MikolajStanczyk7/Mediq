@@ -11,6 +11,7 @@ import AddResultScreen from './src/screens/AddResultScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import PatientDetailScreen from './src/screens/PatientDetailScreen';
 import PatientListScreen from './src/screens/PatientListScreen';
+import HomeButton from './src/components/HomeButton';
 import type { RootStackParamList } from './src/types';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -63,10 +64,10 @@ export default function App() {
             }}
           >
             <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="PatientList" component={PatientListScreen} options={{ title: 'Pacjenci' }} />
-            <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Pacjent' }} />
-            <Stack.Screen name="AddPatient" component={AddPatientScreen} options={{ title: 'Nowy Pacjent' }} />
-            <Stack.Screen name="AddResult" component={AddResultScreen} options={{ title: 'Nowe Wyniki' }} />
+            <Stack.Screen name="PatientList" component={PatientListScreen} options={{ title: 'Pacjenci', headerRight: () => <HomeButton /> }} />
+            <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Pacjent', headerRight: () => <HomeButton /> }} />
+            <Stack.Screen name="AddPatient" component={AddPatientScreen} options={{ title: 'Nowy Pacjent', headerRight: () => <HomeButton /> }} />
+            <Stack.Screen name="AddResult" component={AddResultScreen} options={{ title: 'Nowe Wyniki', headerRight: () => <HomeButton /> }} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

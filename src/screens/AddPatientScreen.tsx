@@ -10,6 +10,11 @@ import type { RootStackParamList } from '../types';
 
 type Props = StackScreenProps<RootStackParamList, 'AddPatient'>;
 
+// Stałe do walidacji formularza
+const MIN_NAME_LENGTH = 2;
+const PESEL_LENGTH = 11;
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
+
 type BledyWalidacjiPacjenta = {
   firstName?: string;
   lastName?: string;
@@ -17,8 +22,6 @@ type BledyWalidacjiPacjenta = {
   birthDate?: string;
   bloodType?: string;
 };
-
-const dozwoloneGrupyKrwi = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
 // Sprawdzamy, czy wpis zawiera tylko litery i spacje.
 function maTylkoLiteryIZnakiSpacji(wartosc: string): boolean {
@@ -32,7 +35,7 @@ function jestPoprawnaData(wartosc: string): boolean {
 
 // Sprawdzamy, czy grupa krwi znajduje się na dozwolonej liście.
 function jestPoprawnaGrupaKrwi(wartosc: string): boolean {
-  return dozwoloneGrupyKrwi.includes(wartosc.trim().toUpperCase());
+  return BLOOD_TYPES.includes(wartosc.trim().toUpperCase());
 }
 
 export default function AddPatientScreen({ navigation }: Props) {
@@ -60,16 +63,16 @@ export default function AddPatientScreen({ navigation }: Props) {
   const validate = (): boolean => {
     const noweBledy: BledyWalidacjiPacjenta = {};
 
-    if (firstName.trim().length < 2 || !maTylkoLiteryIZnakiSpacji(firstName.trim())) {
-      noweBledy.firstName = 'Imię musi mieć minimum 2 litery';
+    if (firstName.trim().length < MIN_NAME_LENGTH || !maTylkoLiteryIZnakiSpacji(firstName.trim())) {
+      noweBledy.firstName = `Imię musi mieć minimum ${MIN_NAME_LENGTH} litery`;
     }
 
-    if (lastName.trim().length < 2 || !maTylkoLiteryIZnakiSpacji(lastName.trim())) {
-      noweBledy.lastName = 'Nazwisko musi mieć minimum 2 litery';
+    if (lastName.trim().length < MIN_NAME_LENGTH || !maTylkoLiteryIZnakiSpacji(lastName.trim())) {
+      noweBledy.lastName = `Nazwisko musi mieć minimum ${MIN_NAME_LENGTH} litery`;
     }
 
     if (!/^\d{11}$/.test(pesel.trim())) {
-      noweBledy.pesel = 'PESEL musi składać się z dokładnie 11 cyfr';
+      noweBledy.pesel = `PESEL musi składać się z dokładnie ${PESEL_LENGTH} cyfr`;
     }
 
     if (birthDate.trim() && !jestPoprawnaData(birthDate.trim())) {
