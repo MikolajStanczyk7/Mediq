@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { LineChart } from 'react-native-chart-kit';
 
@@ -12,14 +12,15 @@ type Props = {
 };
 
 export default function ResultChart({ results, field, label, color = '#1976D2' }: Props) {
-  const chartResults = results
-    .map((result) => ({
-      value: typeof result[field] === 'number' ? (result[field] as number) : undefined,
-      label: result.date,
+  // Przygotowujemy dane wykresu, pomijając puste wartości.
+  const punktyWykresu = results
+    .map((wynikBadania) => ({
+      value: typeof wynikBadania[field] === 'number' ? (wynikBadania[field] as number) : undefined,
+      label: wynikBadania.date,
     }))
-    .filter((item): item is { value: number; label: string } => typeof item.value === 'number');
+    .filter((punkt): punkt is { value: number; label: string } => typeof punkt.value === 'number');
 
-  if (chartResults.length < 2) {
+  if (punktyWykresu.length < 2) {
     return (
       <Card style={styles.card} mode="elevated">
         <Card.Content>
@@ -31,11 +32,11 @@ export default function ResultChart({ results, field, label, color = '#1976D2' }
   }
 
   const screenWidth = Dimensions.get('window').width;
-  const labels = chartResults.map((item) => {
-    const date = new Date(item.label);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${day}.${month}`;
+  const etykietyDat = punktyWykresu.map((punkt) => {
+    const dataBadania = new Date(punkt.label);
+    const dzien = String(dataBadania.getDate()).padStart(2, '0');
+    const miesiac = String(dataBadania.getMonth() + 1).padStart(2, '0');
+    return `${dzien}.${miesiac}`;
   });
 
   return (
@@ -45,8 +46,8 @@ export default function ResultChart({ results, field, label, color = '#1976D2' }
       </Card.Content>
       <LineChart
         data={{
-          labels,
-          datasets: [{ data: chartResults.map((item) => item.value) }],
+          labels: etykietyDat,
+          datasets: [{ data: punktyWykresu.map((punkt) => punkt.value) }],
         }}
         width={screenWidth - 32}
         height={220}

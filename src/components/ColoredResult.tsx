@@ -15,13 +15,14 @@ const colors = {
   red: '#D32F2F',
 } as const;
 
+// Pokazujemy kolorową etykietę normy dla pojedynczego wyniku.
 export default function ColoredResult({ field, value, label }: Props) {
-  const colorKey = getResultColor(field, value);
-  const color = colors[colorKey];
+  const kluczKoloru = getResultColor(field, value);
+  const kolor = colors[kluczKoloru];
 
   return (
-    <View style={[styles.container, { backgroundColor: `${color}14`, borderColor: `${color}40` }]}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
+    <View style={[styles.container, { backgroundColor: `${kolor}14`, borderColor: `${kolor}40` }]}>
+      <View style={[styles.dot, { backgroundColor: kolor }]} />
       <Text style={styles.text}>{label}</Text>
     </View>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { HelperText, Snackbar, Text, TextInput, Button, ActivityIndicator } from 'react-native-paper';
+import { HelperText, Snackbar, TextInput, Button, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackScreenProps } from '@react-navigation/stack';
 
@@ -10,7 +10,33 @@ import type { RootStackParamList } from '../types';
 
 type Props = StackScreenProps<RootStackParamList, 'AddPatient'>;
 
+type BledyWalidacjiPacjenta = {
+  firstName?: string;
+  lastName?: string;
+  pesel?: string;
+  birthDate?: string;
+  bloodType?: string;
+};
+
+const dozwoloneGrupyKrwi = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
+
+// Sprawdzamy, czy wpis zawiera tylko litery i spacje.
+function maTylkoLiteryIZnakiSpacji(wartosc: string): boolean {
+  return /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż\s]+$/.test(wartosc);
+}
+
+// Sprawdzamy, czy data ma czytelny format DD.MM.RRRR.
+function jestPoprawnaData(wartosc: string): boolean {
+  return /^\d{2}\.\d{2}\.\d{4}$/.test(wartosc);
+}
+
+// Sprawdzamy, czy grupa krwi znajduje się na dozwolonej liście.
+function jestPoprawnaGrupaKrwi(wartosc: string): boolean {
+  return dozwoloneGrupyKrwi.includes(wartosc.trim().toUpperCase());
+}
+
 export default function AddPatientScreen({ navigation }: Props) {
+  // Przechowujemy wartości formularza w stanie lokalnym.
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [pesel, setPesel] = useState('');
@@ -18,36 +44,47 @@ export default function AddPatientScreen({ navigation }: Props) {
   const [bloodType, setBloodType] = useState('');
   const [allergies, setAllergies] = useState('');
   const [diseases, setDiseases] = useState('');
-  const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; pesel?: string }>({});
+  const [errors, setErrors] = useState<BledyWalidacjiPacjenta>({});
   const [saving, setSaving] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  // Zrzucamy fokus z pól, gdy ekran się zamyka.
   useEffect(() => {
     return () => {
       Keyboard.dismiss();
     };
   }, []);
 
-  const validate = () => {
-    const nextErrors: { firstName?: string; lastName?: string; pesel?: string } = {};
+  // Walidujemy dane pacjenta przed zapisem.
+  const validate = (): boolean => {
+    const noweBledy: BledyWalidacjiPacjenta = {};
 
-    if (!firstName.trim()) {
-      nextErrors.firstName = 'Imię jest wymagane';
+    if (firstName.trim().length < 2 || !maTylkoLiteryIZnakiSpacji(firstName.trim())) {
+      noweBledy.firstName = 'Imię musi mieć minimum 2 litery';
     }
 
-    if (!lastName.trim()) {
-      nextErrors.lastName = 'Nazwisko jest wymagane';
+    if (lastName.trim().length < 2 || !maTylkoLiteryIZnakiSpacji(lastName.trim())) {
+      noweBledy.lastName = 'Nazwisko musi mieć minimum 2 litery';
     }
 
-    if (!pesel.trim()) {
-      nextErrors.pesel = 'PESEL jest wymagany';
+    if (!/^\d{11}$/.test(pesel.trim())) {
+      noweBledy.pesel = 'PESEL musi składać się z dokładnie 11 cyfr';
     }
 
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    if (birthDate.trim() && !jestPoprawnaData(birthDate.trim())) {
+      noweBledy.birthDate = 'Podaj datę w formacie DD.MM.RRRR';
+    }
+
+    if (bloodType.trim() && !jestPoprawnaGrupaKrwi(bloodType)) {
+      noweBledy.bloodType = 'Nieprawidłowa grupa krwi (np. A+, 0-, AB+)';
+    }
+
+    setErrors(noweBledy);
+    return Object.keys(noweBledy).length === 0;
   };
 
+  // Zapisujemy pacjenta tylko wtedy, gdy formularz przejdzie walidację.
   const handleSave = async () => {
     if (!validate()) {
       return;
@@ -60,7 +97,7 @@ export default function AddPatientScreen({ navigation }: Props) {
         lastName: lastName.trim(),
         pesel: pesel.trim(),
         birthDate: birthDate.trim(),
-        bloodType: bloodType.trim(),
+        bloodType: bloodType.trim().toUpperCase(),
         allergies: allergies.trim(),
         diseases: diseases.trim(),
       });
@@ -84,19 +121,23 @@ export default function AddPatientScreen({ navigation }: Props) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <TextInput label="Imię *" mode="outlined" value={firstName} onChangeText={setFirstName} style={styles.input} error={Boolean(errors.firstName)} />
+            <TextInput label="Imię *" placeholder="np. Jan" mode="outlined" value={firstName} onChangeText={setFirstName} style={styles.input} error={Boolean(errors.firstName)} />
             <HelperText type="error" visible={Boolean(errors.firstName)}>{errors.firstName}</HelperText>
 
-            <TextInput label="Nazwisko *" mode="outlined" value={lastName} onChangeText={setLastName} style={styles.input} error={Boolean(errors.lastName)} />
+            <TextInput label="Nazwisko *" placeholder="np. Kowalski" mode="outlined" value={lastName} onChangeText={setLastName} style={styles.input} error={Boolean(errors.lastName)} />
             <HelperText type="error" visible={Boolean(errors.lastName)}>{errors.lastName}</HelperText>
 
-            <TextInput label="PESEL *" mode="outlined" value={pesel} onChangeText={setPesel} keyboardType="number-pad" style={styles.input} error={Boolean(errors.pesel)} />
+            <TextInput label="PESEL *" placeholder="np. 90010112345" mode="outlined" value={pesel} onChangeText={setPesel} keyboardType="number-pad" style={styles.input} error={Boolean(errors.pesel)} />
             <HelperText type="error" visible={Boolean(errors.pesel)}>{errors.pesel}</HelperText>
 
-            <TextInput label="Data urodzenia (DD.MM.RRRR)" mode="outlined" value={birthDate} onChangeText={setBirthDate} style={styles.input} />
-            <TextInput label="Grupa krwi" mode="outlined" value={bloodType} onChangeText={setBloodType} style={styles.input} />
-            <TextInput label="Alergie" mode="outlined" value={allergies} onChangeText={setAllergies} multiline style={styles.input} />
-            <TextInput label="Choroby przewlekłe" mode="outlined" value={diseases} onChangeText={setDiseases} multiline style={styles.input} />
+            <TextInput label="Data urodzenia (DD.MM.RRRR)" placeholder="np. 01.01.1990" mode="outlined" value={birthDate} onChangeText={setBirthDate} style={styles.input} error={Boolean(errors.birthDate)} />
+            <HelperText type="error" visible={Boolean(errors.birthDate)}>{errors.birthDate}</HelperText>
+
+            <TextInput label="Grupa krwi" placeholder="np. A+, 0-, AB+" mode="outlined" value={bloodType} onChangeText={setBloodType} style={styles.input} error={Boolean(errors.bloodType)} />
+            <HelperText type="error" visible={Boolean(errors.bloodType)}>{errors.bloodType}</HelperText>
+
+            <TextInput label="Alergie" placeholder="np. penicylina, pyłki, orzechy" mode="outlined" value={allergies} onChangeText={setAllergies} multiline style={styles.input} />
+            <TextInput label="Choroby przewlekłe" placeholder="np. cukrzyca typu 2, nadciśnienie" mode="outlined" value={diseases} onChangeText={setDiseases} multiline style={styles.input} />
 
             <Button mode="contained" onPress={handleSave} style={styles.button} contentStyle={styles.buttonContent} disabled={saving}>
               {saving ? <ActivityIndicator animating color="#FFFFFF" /> : 'Zapisz pacjenta'}

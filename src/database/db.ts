@@ -2,8 +2,10 @@ import * as SQLite from 'expo-sqlite';
 
 import type { Patient, Result } from '../types';
 
-export const db = SQLite.openDatabaseSync('medinote.db');
+// Otwieramy lokalną bazę danych SQLite dla aplikacji Mediq.
+export const db = SQLite.openDatabaseSync('mediq.db');
 
+// Tworzymy tabelę pacjentów zgodnie ze schematem offline.
 const patientTableSql = `
   CREATE TABLE IF NOT EXISTS patients (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,6 +20,7 @@ const patientTableSql = `
   );
 `;
 
+// Tworzymy tabelę wyników badań powiązaną z pacjentem.
 const resultTableSql = `
   CREATE TABLE IF NOT EXISTS results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,6 +38,7 @@ const resultTableSql = `
   );
 `;
 
+// Inicjalizujemy bazę i zakładamy tabele, jeśli jeszcze ich nie ma.
 export async function initDB(): Promise<void> {
   try {
     await db.execAsync('PRAGMA foreign_keys = ON;');
@@ -46,6 +50,7 @@ export async function initDB(): Promise<void> {
   }
 }
 
+// Pobieramy wszystkich pacjentów do listy.
 export async function getAllPatients(): Promise<Patient[]> {
   try {
     return await db.getAllAsync<Patient>('SELECT * FROM patients ORDER BY createdAt DESC, id DESC');
@@ -55,6 +60,7 @@ export async function getAllPatients(): Promise<Patient[]> {
   }
 }
 
+// Pobieramy pojedynczego pacjenta po identyfikatorze.
 export async function getPatientById(id: number): Promise<Patient | null> {
   try {
     return await db.getFirstAsync<Patient>('SELECT * FROM patients WHERE id = ?', [id]);
@@ -64,31 +70,33 @@ export async function getPatientById(id: number): Promise<Patient | null> {
   }
 }
 
-export async function insertPatient(patient: Patient): Promise<number> {
+// Zapisujemy nowego pacjenta i zwracamy jego identyfikator.
+export async function insertPatient(pacjent: Patient): Promise<number> {
   try {
-    const createdAt = patient.createdAt ?? new Date().toISOString();
-    const result = await db.runAsync(
+    const utworzonoO = pacjent.createdAt ?? new Date().toISOString();
+    const wynikZapisu = await db.runAsync(
       `INSERT INTO patients (firstName, lastName, pesel, birthDate, bloodType, allergies, diseases, createdAt)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        patient.firstName,
-        patient.lastName,
-        patient.pesel,
-        patient.birthDate ?? '',
-        patient.bloodType ?? '',
-        patient.allergies ?? '',
-        patient.diseases ?? '',
-        createdAt,
+        pacjent.firstName,
+        pacjent.lastName,
+        pacjent.pesel,
+        pacjent.birthDate ?? '',
+        pacjent.bloodType ?? '',
+        pacjent.allergies ?? '',
+        pacjent.diseases ?? '',
+        utworzonoO,
       ],
     );
 
-    return Number(result.lastInsertRowId);
+    return Number(wynikZapisu.lastInsertRowId);
   } catch (error) {
     console.error('Failed to insert patient', error);
     throw error;
   }
 }
 
+// Usuwamy pacjenta wraz z jego wynikami.
 export async function deletePatient(id: number): Promise<void> {
   try {
     await db.runAsync('DELETE FROM patients WHERE id = ?', [id]);
@@ -98,6 +106,7 @@ export async function deletePatient(id: number): Promise<void> {
   }
 }
 
+// Pobieramy wyniki przypisane do konkretnego pacjenta.
 export async function getResultsByPatient(patientId: number): Promise<Result[]> {
   try {
     return await db.getAllAsync<Result>('SELECT * FROM results WHERE patientId = ? ORDER BY date DESC, id DESC', [patientId]);
@@ -107,26 +116,27 @@ export async function getResultsByPatient(patientId: number): Promise<Result[]> 
   }
 }
 
-export async function insertResult(result: Result): Promise<number> {
+// Zapisujemy nowy wynik badania i zwracamy jego identyfikator.
+export async function insertResult(wynikBadania: Result): Promise<number> {
   try {
-    const insertResult = await db.runAsync(
+    const rezultatZapisu = await db.runAsync(
       `INSERT INTO results (patientId, date, glucose, systolic, diastolic, cholesterol, weight, height, notes, photoUri)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        result.patientId,
-        result.date,
-        result.glucose ?? null,
-        result.systolic ?? null,
-        result.diastolic ?? null,
-        result.cholesterol ?? null,
-        result.weight ?? null,
-        result.height ?? null,
-        result.notes ?? '',
-        result.photoUri ?? '',
+        wynikBadania.patientId,
+        wynikBadania.date,
+        wynikBadania.glucose ?? null,
+        wynikBadania.systolic ?? null,
+        wynikBadania.diastolic ?? null,
+        wynikBadania.cholesterol ?? null,
+        wynikBadania.weight ?? null,
+        wynikBadania.height ?? null,
+        wynikBadania.notes ?? '',
+        wynikBadania.photoUri ?? '',
       ],
     );
 
-    return Number(insertResult.lastInsertRowId);
+    return Number(rezultatZapisu.lastInsertRowId);
   } catch (error) {
     console.error('Failed to insert result', error);
     throw error;

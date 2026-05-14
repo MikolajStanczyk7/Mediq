@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Image, StyleSheet, View } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { Button } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 
 type Props = {
@@ -8,16 +8,18 @@ type Props = {
   initialUri?: string;
 };
 
+// Pozwalamy użytkownikowi wybrać zdjęcie z aparatu albo galerii.
 export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
-  const [uri, setUri] = useState(initialUri ?? '');
+  const [photoUri, setPhotoUri] = useState(initialUri ?? '');
 
   useEffect(() => {
-    setUri(initialUri ?? '');
+    setPhotoUri(initialUri ?? '');
   }, [initialUri]);
 
-  const ensurePermission = async (kind: 'camera' | 'library') => {
+  // Sprawdzamy uprawnienia zanim otworzymy aparat lub galerię.
+  const sprawdzUprawnienia = async (rodzaj: 'camera' | 'library') => {
     const permission =
-      kind === 'camera'
+      rodzaj === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -29,8 +31,9 @@ export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
     return true;
   };
 
+  // Otwieramy aparat i zapisujemy wybrany plik lokalnie.
   const pickFromCamera = async () => {
-    if (!(await ensurePermission('camera'))) {
+    if (!(await sprawdzUprawnienia('camera'))) {
       return;
     }
 
@@ -40,14 +43,15 @@ export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
     });
 
     if (!result.canceled) {
-      const nextUri = result.assets[0]?.uri ?? '';
-      setUri(nextUri);
-      onPhotoSelected(nextUri);
+      const nowyAdresZdjecia = result.assets[0]?.uri ?? '';
+      setPhotoUri(nowyAdresZdjecia);
+      onPhotoSelected(nowyAdresZdjecia);
     }
   };
 
+  // Otwieramy galerię i zapisujemy wybraną fotografię.
   const pickFromLibrary = async () => {
-    if (!(await ensurePermission('library'))) {
+    if (!(await sprawdzUprawnienia('library'))) {
       return;
     }
 
@@ -57,12 +61,13 @@ export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
     });
 
     if (!result.canceled) {
-      const nextUri = result.assets[0]?.uri ?? '';
-      setUri(nextUri);
-      onPhotoSelected(nextUri);
+      const nowyAdresZdjecia = result.assets[0]?.uri ?? '';
+      setPhotoUri(nowyAdresZdjecia);
+      onPhotoSelected(nowyAdresZdjecia);
     }
   };
 
+  // Pokazujemy prosty wybór źródła zdjęcia.
   const openActionSheet = () => {
     Alert.alert('Dodaj zdjęcie', 'Wybierz źródło zdjęcia', [
       { text: 'Aparat', onPress: pickFromCamera },
@@ -71,8 +76,9 @@ export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
     ]);
   };
 
+  // Czyścimy aktualnie przypięte zdjęcie.
   const clearPhoto = () => {
-    setUri('');
+    setPhotoUri('');
     onPhotoSelected('');
   };
 
@@ -82,9 +88,9 @@ export default function PhotoPicker({ onPhotoSelected, initialUri }: Props) {
         📷 Dodaj zdjęcie
       </Button>
 
-      {uri ? (
+      {photoUri ? (
         <View style={styles.previewWrap}>
-          <Image source={{ uri }} style={styles.preview} />
+          <Image source={{ uri: photoUri }} style={styles.preview} />
           <Button mode="text" onPress={clearPhoto} textColor="#D32F2F">
             ❌ Usuń zdjęcie
           </Button>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import type { StackScreenProps } from '@react-navigation/stack';
-import { ActivityIndicator, Button, Snackbar, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, HelperText, Snackbar, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BMICalculator from '../components/BMICalculator';
@@ -14,48 +14,107 @@ import type { RootStackParamList } from '../types';
 
 type Props = StackScreenProps<RootStackParamList, 'AddResult'>;
 
+type BledyWalidacjiWynikow = {
+  glucose?: string;
+  systolic?: string;
+  diastolic?: string;
+  cholesterol?: string;
+  weight?: string;
+  height?: string;
+};
+
+// Zamieniamy tekst wpisany przez użytkownika na wartość liczbową.
 function toNumber(value: string): number | undefined {
   const parsed = Number(value.replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 export default function AddResultScreen({ navigation, route }: Props) {
+  // Trzymamy surowe wartości formularza w lokalnym stanie.
   const { patientId } = route.params;
-  const [glucose, setGlucose] = useState('');
-  const [systolic, setSystolic] = useState('');
-  const [diastolic, setDiastolic] = useState('');
+  const [glukoza, setGlukoza] = useState('');
+  const [cisnienieSkurczowe, setCisnienieSkurczowe] = useState('');
+  const [cisnienieRozkurczowe, setCisnienieRozkurczowe] = useState('');
   const [cholesterol, setCholesterol] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [notes, setNotes] = useState('');
+  const [waga, setWaga] = useState('');
+  const [wzrost, setWzrost] = useState('');
+  const [notatki, setNotatki] = useState('');
   const [photoUri, setPhotoUri] = useState('');
   const [saving, setSaving] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [touched, setTouched] = useState({ glucose: false, systolic: false, diastolic: false, cholesterol: false, weight: false, height: false });
+  const [dotknietePola, setDotknietePola] = useState({ glucose: false, systolic: false, diastolic: false, cholesterol: false, weight: false, height: false });
+  const [bledyWalidacji, setBledyWalidacji] = useState<BledyWalidacjiWynikow>({});
 
-  const numericValues = useMemo(() => ({
-    glucose: toNumber(glucose),
-    systolic: toNumber(systolic),
-    diastolic: toNumber(diastolic),
+  // Wyliczamy pomocnicze wartości liczbowe z pól tekstowych.
+  const wartosciLiczbowe = useMemo(() => ({
+    glucose: toNumber(glukoza),
+    systolic: toNumber(cisnienieSkurczowe),
+    diastolic: toNumber(cisnienieRozkurczowe),
     cholesterol: toNumber(cholesterol),
-    weight: toNumber(weight),
-    height: toNumber(height),
-  }), [cholesterol, diastolic, glucose, height, systolic, weight]);
+    weight: toNumber(waga),
+    height: toNumber(wzrost),
+  }), [cholesterol, cisnienieRozkurczowe, cisnienieSkurczowe, glukoza, waga, wzrost]);
 
+  // Sprawdzamy, czy użytkownik wpisał chociaż jeden wynik liczbowy.
+  const czyWypelnionoChociazJednoPole = [glukoza, cisnienieSkurczowe, cisnienieRozkurczowe, cholesterol, waga, wzrost].some((wartosc) => wartosc.trim().length > 0);
+
+  // Walidujemy pola badania przed zapisem.
+  const validate = (): boolean => {
+    const noweBledy: BledyWalidacjiWynikow = {};
+
+    if (glukoza.trim() && (wartosciLiczbowe.glucose == null || wartosciLiczbowe.glucose < 20 || wartosciLiczbowe.glucose > 600)) {
+      noweBledy.glucose = 'Glukoza musi być liczbą między 20 a 600';
+    }
+
+    if (cisnienieSkurczowe.trim() && (wartosciLiczbowe.systolic == null || wartosciLiczbowe.systolic < 60 || wartosciLiczbowe.systolic > 250)) {
+      noweBledy.systolic = 'Wartość między 60 a 250';
+    }
+
+    if (cisnienieRozkurczowe.trim() && (wartosciLiczbowe.diastolic == null || wartosciLiczbowe.diastolic < 40 || wartosciLiczbowe.diastolic > 150)) {
+      noweBledy.diastolic = 'Wartość między 40 a 150';
+    }
+
+    if (cholesterol.trim() && (wartosciLiczbowe.cholesterol == null || wartosciLiczbowe.cholesterol < 50 || wartosciLiczbowe.cholesterol > 600)) {
+      noweBledy.cholesterol = 'Cholesterol musi być liczbą między 50 a 600';
+    }
+
+    if (waga.trim() && (wartosciLiczbowe.weight == null || wartosciLiczbowe.weight < 2 || wartosciLiczbowe.weight > 300)) {
+      noweBledy.weight = 'Waga między 2 a 300 kg';
+    }
+
+    if (wzrost.trim() && (wartosciLiczbowe.height == null || wartosciLiczbowe.height < 50 || wartosciLiczbowe.height > 250)) {
+      noweBledy.height = 'Wzrost między 50 a 250 cm';
+    }
+
+    setBledyWalidacji(noweBledy);
+    return Object.keys(noweBledy).length === 0;
+  };
+
+  // Zapisujemy badanie dopiero po poprawnej walidacji.
   const handleSave = async () => {
+    if (!czyWypelnionoChociazJednoPole) {
+      setSnackbarMessage('Wypełnij przynajmniej jedno pole z wynikami');
+      setSnackbarVisible(true);
+      return;
+    }
+
+    if (!validate()) {
+      return;
+    }
+
     try {
       setSaving(true);
       await insertResult({
         patientId,
         date: new Date().toISOString(),
-        glucose: numericValues.glucose,
-        systolic: numericValues.systolic,
-        diastolic: numericValues.diastolic,
-        cholesterol: numericValues.cholesterol,
-        weight: numericValues.weight,
-        height: numericValues.height,
-        notes: notes.trim(),
+        glucose: wartosciLiczbowe.glucose,
+        systolic: wartosciLiczbowe.systolic,
+        diastolic: wartosciLiczbowe.diastolic,
+        cholesterol: wartosciLiczbowe.cholesterol,
+        weight: wartosciLiczbowe.weight,
+        height: wartosciLiczbowe.height,
+        notes: notatki.trim(),
         photoUri: photoUri || undefined,
       });
       setSnackbarMessage('✅ Wyniki zapisane');
@@ -78,30 +137,36 @@ export default function AddResultScreen({ navigation, route }: Props) {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <TextInput label="Glukoza" mode="outlined" value={glucose} onChangeText={setGlucose} keyboardType="decimal-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, glucose: true }))} />
-            {touched.glucose && numericValues.glucose != null ? <ColoredResult field="glucose" value={numericValues.glucose} label={getResultLabel('glucose', numericValues.glucose)} /> : null}
+            <TextInput label="Glukoza" placeholder="np. 95 (norma: 70–99)" mode="outlined" value={glukoza} onChangeText={setGlukoza} keyboardType="decimal-pad" style={styles.input} error={Boolean(bledyWalidacji.glucose)} onBlur={() => setDotknietePola((current) => ({ ...current, glucose: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.glucose)}>{bledyWalidacji.glucose}</HelperText>
+            {dotknietePola.glucose && wartosciLiczbowe.glucose != null ? <ColoredResult field="glucose" value={wartosciLiczbowe.glucose} label={getResultLabel('glucose', wartosciLiczbowe.glucose)} /> : null}
 
-            <TextInput label="Ciśnienie skurczowe" mode="outlined" value={systolic} onChangeText={setSystolic} keyboardType="number-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, systolic: true }))} />
-            {touched.systolic && numericValues.systolic != null ? <ColoredResult field="systolic" value={numericValues.systolic} label={getResultLabel('systolic', numericValues.systolic)} /> : null}
+            <TextInput label="Ciśnienie skurczowe" placeholder="np. 120 (norma: 90–120)" mode="outlined" value={cisnienieSkurczowe} onChangeText={setCisnienieSkurczowe} keyboardType="number-pad" style={styles.input} error={Boolean(bledyWalidacji.systolic)} onBlur={() => setDotknietePola((current) => ({ ...current, systolic: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.systolic)}>{bledyWalidacji.systolic}</HelperText>
+            {dotknietePola.systolic && wartosciLiczbowe.systolic != null ? <ColoredResult field="systolic" value={wartosciLiczbowe.systolic} label={getResultLabel('systolic', wartosciLiczbowe.systolic)} /> : null}
 
-            <TextInput label="Ciśnienie rozkurczowe" mode="outlined" value={diastolic} onChangeText={setDiastolic} keyboardType="number-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, diastolic: true }))} />
-            {touched.diastolic && numericValues.diastolic != null ? <ColoredResult field="diastolic" value={numericValues.diastolic} label={getResultLabel('diastolic', numericValues.diastolic)} /> : null}
+            <TextInput label="Ciśnienie rozkurczowe" placeholder="np. 80 (norma: 60–80)" mode="outlined" value={cisnienieRozkurczowe} onChangeText={setCisnienieRozkurczowe} keyboardType="number-pad" style={styles.input} error={Boolean(bledyWalidacji.diastolic)} onBlur={() => setDotknietePola((current) => ({ ...current, diastolic: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.diastolic)}>{bledyWalidacji.diastolic}</HelperText>
+            {dotknietePola.diastolic && wartosciLiczbowe.diastolic != null ? <ColoredResult field="diastolic" value={wartosciLiczbowe.diastolic} label={getResultLabel('diastolic', wartosciLiczbowe.diastolic)} /> : null}
 
-            <TextInput label="Cholesterol" mode="outlined" value={cholesterol} onChangeText={setCholesterol} keyboardType="decimal-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, cholesterol: true }))} />
-            {touched.cholesterol && numericValues.cholesterol != null ? <ColoredResult field="cholesterol" value={numericValues.cholesterol} label={getResultLabel('cholesterol', numericValues.cholesterol)} /> : null}
+            <TextInput label="Cholesterol" placeholder="np. 180 (norma: poniżej 200)" mode="outlined" value={cholesterol} onChangeText={setCholesterol} keyboardType="decimal-pad" style={styles.input} error={Boolean(bledyWalidacji.cholesterol)} onBlur={() => setDotknietePola((current) => ({ ...current, cholesterol: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.cholesterol)}>{bledyWalidacji.cholesterol}</HelperText>
+            {dotknietePola.cholesterol && wartosciLiczbowe.cholesterol != null ? <ColoredResult field="cholesterol" value={wartosciLiczbowe.cholesterol} label={getResultLabel('cholesterol', wartosciLiczbowe.cholesterol)} /> : null}
 
-            <TextInput label="Waga (kg)" mode="outlined" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, weight: true }))} />
-            {touched.weight && numericValues.weight != null ? <ColoredResult field="weight" value={numericValues.weight} label={getResultLabel('weight', numericValues.weight)} /> : null}
+            <TextInput label="Waga (kg)" placeholder="np. 70" mode="outlined" value={waga} onChangeText={setWaga} keyboardType="decimal-pad" style={styles.input} error={Boolean(bledyWalidacji.weight)} onBlur={() => setDotknietePola((current) => ({ ...current, weight: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.weight)}>{bledyWalidacji.weight}</HelperText>
+            {dotknietePola.weight && wartosciLiczbowe.weight != null ? <ColoredResult field="weight" value={wartosciLiczbowe.weight} label={getResultLabel('weight', wartosciLiczbowe.weight)} /> : null}
 
-            <TextInput label="Wzrost (cm)" mode="outlined" value={height} onChangeText={setHeight} keyboardType="decimal-pad" style={styles.input} onBlur={() => setTouched((current) => ({ ...current, height: true }))} />
-            {touched.height && numericValues.height != null ? <ColoredResult field="height" value={numericValues.height} label={getResultLabel('height', numericValues.height)} /> : null}
+            <TextInput label="Wzrost (cm)" placeholder="np. 175" mode="outlined" value={wzrost} onChangeText={setWzrost} keyboardType="decimal-pad" style={styles.input} error={Boolean(bledyWalidacji.height)} onBlur={() => setDotknietePola((current) => ({ ...current, height: true }))} />
+            <HelperText type="error" visible={Boolean(bledyWalidacji.height)}>{bledyWalidacji.height}</HelperText>
+            {dotknietePola.height && wartosciLiczbowe.height != null ? <ColoredResult field="height" value={wartosciLiczbowe.height} label={getResultLabel('height', wartosciLiczbowe.height)} /> : null}
 
-            <TextInput label="Notatki" mode="outlined" value={notes} onChangeText={setNotes} multiline style={styles.input} />
+            <TextInput label="Notatki" placeholder="np. Pacjent skarży się na bóle głowy, zalecono kontrolę za 2 tygodnie" mode="outlined" value={notatki} onChangeText={setNotatki} multiline style={styles.input} />
 
             <PhotoPicker onPhotoSelected={setPhotoUri} initialUri={photoUri} />
 
             <View style={styles.bmiWrap}>
-              <BMICalculator weight={numericValues.weight} height={numericValues.height} />
+              <BMICalculator weight={wartosciLiczbowe.weight} height={wartosciLiczbowe.height} />
             </View>
 
             <Button mode="contained" onPress={handleSave} style={styles.button} contentStyle={styles.buttonContent} disabled={saving}>
@@ -132,6 +197,12 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
+  },
+  helperError: {
+    color: '#D32F2F',
+    fontSize: 12,
+    minHeight: 16,
+    marginBottom: 8,
   },
   bmiWrap: {
     marginTop: 12,

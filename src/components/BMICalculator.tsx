@@ -14,6 +14,7 @@ const colors = {
   red: '#D32F2F',
 } as const;
 
+// Dobieramy prosty opis BMI, żeby wynik był czytelny dla użytkownika.
 function getBmiLabel(bmi: number): string {
   if (bmi < 18.5) {
     return 'Niedowaga';
@@ -30,22 +31,23 @@ function getBmiLabel(bmi: number): string {
   return 'Otyłość';
 }
 
+// Pokazujemy BMI wraz z kolorowym wskaźnikiem normy.
 export default function BMICalculator({ weight, height }: Props) {
   if (!weight || !height) {
     return <Text style={styles.muted}>Uzupełnij wagę i wzrost aby obliczyć BMI</Text>;
   }
 
-  const bmi = weight / Math.pow(height / 100, 2);
-  const colorKey = getResultColor('bmi', bmi);
-  const color = colors[colorKey];
-  const progressWidth = `${Math.max(0, Math.min(100, ((bmi - 10) / 30) * 100))}%`;
+  const wskaznikBmi = weight / Math.pow(height / 100, 2);
+  const kluczKoloru = getResultColor('bmi', wskaznikBmi);
+  const kolor = colors[kluczKoloru];
+  const szerokoscPaska = `${Math.max(0, Math.min(100, ((wskaznikBmi - 10) / 30) * 100))}%`;
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.value, { color }]}>BMI: {bmi.toFixed(1)}</Text>
-      <Text style={[styles.label, { color }]}>{getBmiLabel(bmi)}</Text>
+      <Text style={[styles.value, { color: kolor }]}>BMI: {wskaznikBmi.toFixed(1)}</Text>
+      <Text style={[styles.label, { color: kolor }]}>{getBmiLabel(wskaznikBmi)}</Text>
       <View style={styles.barTrack}>
-        <View style={[styles.barFill, { backgroundColor: color, width: progressWidth }]} />
+        <View style={[styles.barFill, { backgroundColor: kolor, width: szerokoscPaska }]} />
       </View>
     </View>
   );

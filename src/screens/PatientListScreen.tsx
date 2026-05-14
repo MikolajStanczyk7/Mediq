@@ -13,17 +13,19 @@ import type { Patient, RootStackParamList } from '../types';
 type Props = StackScreenProps<RootStackParamList, 'PatientList'>;
 
 export default function PatientListScreen({ navigation }: Props) {
+  // Przechowujemy pobraną listę pacjentów i filtrujemy ją lokalnie.
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  // Ładujemy dane przy każdym wejściu na ekran.
   const loadPatients = useCallback(async () => {
     try {
       setLoading(true);
-      const rows = await getAllPatients();
-      setPatients(rows);
+      const listaPacjentow = await getAllPatients();
+      setPatients(listaPacjentow);
     } catch (error) {
       console.error('Failed to load patient list', error);
       setSnackbarMessage('❌ Wystąpił błąd. Spróbuj ponownie.');
@@ -39,16 +41,18 @@ export default function PatientListScreen({ navigation }: Props) {
     }, [loadPatients]),
   );
 
-  const filteredPatients = patients.filter((patient) => {
-    const query = searchTerm.trim().toLowerCase();
+  // Filtrowanie działa po nazwisku lub PESEL bez dodatkowego odpytywania bazy.
+  const filteredPatients = patients.filter((pacjent) => {
+    const frazaWyszukiwania = searchTerm.trim().toLowerCase();
 
-    if (!query) {
+    if (!frazaWyszukiwania) {
       return true;
     }
 
-    return patient.lastName.toLowerCase().includes(query) || patient.pesel.toLowerCase().includes(query);
+    return pacjent.lastName.toLowerCase().includes(frazaWyszukiwania) || pacjent.pesel.toLowerCase().includes(frazaWyszukiwania);
   });
 
+  // Renderujemy stan ładowania, pusty widok albo listę kart.
   const renderContent = () => {
     if (loading) {
       return (
@@ -71,15 +75,15 @@ export default function PatientListScreen({ navigation }: Props) {
     return (
       <FlatList
         data={filteredPatients}
-        keyExtractor={(item) => String(item.id ?? item.pesel)}
+        keyExtractor={(pacjent) => String(pacjent.id ?? pacjent.pesel)}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <Card style={styles.card} mode="elevated" onPress={() => navigation.navigate('PatientDetail', { patientId: item.id ?? 0 })}>
+        renderItem={({ item: pacjent }) => (
+          <Card style={styles.card} mode="elevated" onPress={() => navigation.navigate('PatientDetail', { patientId: pacjent.id ?? 0 })}>
             <Card.Content style={styles.cardContent}>
               <View style={styles.cardText}>
-                <Text style={styles.cardTitle}>{`${item.lastName} ${item.firstName}`}</Text>
-                <Text style={styles.cardSubtitle}>{`PESEL: ${item.pesel}`}</Text>
-                {item.bloodType ? <Text style={styles.cardSubtitle}>{`Grupa krwi: ${item.bloodType}`}</Text> : null}
+                <Text style={styles.cardTitle}>{`${pacjent.lastName} ${pacjent.firstName}`}</Text>
+                <Text style={styles.cardSubtitle}>{`PESEL: ${pacjent.pesel}`}</Text>
+                {pacjent.bloodType ? <Text style={styles.cardSubtitle}>{`Grupa krwi: ${pacjent.bloodType}`}</Text> : null}
               </View>
               <MaterialCommunityIcons name="chevron-right" size={28} color="#9E9E9E" />
             </Card.Content>

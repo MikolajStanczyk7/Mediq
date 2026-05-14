@@ -19,16 +19,19 @@ const colorMap = {
   red: '#D32F2F',
 } as const;
 
+// Formatujemy datę wyników na bardziej czytelny zapis.
 function formatDate(value: string): string {
   const date = new Date(value);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}.${month}.${year}`;
+  const dzien = String(date.getDate()).padStart(2, '0');
+  const miesiac = String(date.getMonth() + 1).padStart(2, '0');
+  const rok = date.getFullYear();
+  return `${dzien}.${miesiac}.${rok}`;
 }
 
 export default function PatientDetailScreen({ navigation, route }: Props) {
   const { patientId } = route.params;
+
+  // Trzymamy szczegóły pacjenta, historię wyników i stany pomocnicze widoku.
   const [patient, setPatient] = useState<Patient | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,15 +40,17 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState('');
 
+  // Pobieramy pacjenta i jego wyniki za każdym wejściem na ekran.
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const loadedPatient = await getPatientById(patientId);
-      const loadedResults = await getResultsByPatient(patientId);
-      setPatient(loadedPatient);
-      setResults(loadedResults);
-      if (loadedPatient) {
-        navigation.setOptions({ title: `${loadedPatient.firstName} ${loadedPatient.lastName}` });
+      const zaladowanyPacjent = await getPatientById(patientId);
+      const zaladowaneWyniki = await getResultsByPatient(patientId);
+      setPatient(zaladowanyPacjent);
+      setResults(zaladowaneWyniki);
+
+      if (zaladowanyPacjent) {
+        navigation.setOptions({ title: `${zaladowanyPacjent.firstName} ${zaladowanyPacjent.lastName}` });
       }
     } catch (error) {
       console.error(`Failed to load patient detail for ${patientId}`, error);
@@ -62,8 +67,10 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
     }, [loadData]),
   );
 
-  const sortedResults = useMemo(() => [...results].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [results]);
+  // Ustawiamy wyniki od najnowszego do najstarszego.
+  const posortowaneWyniki = useMemo(() => [...results].sort((pierwszyWynik, drugiWynik) => new Date(drugiWynik.date).getTime() - new Date(pierwszyWynik.date).getTime()), [results]);
 
+  // Usuwamy pacjenta po potwierdzeniu użytkownika.
   const handleDelete = async () => {
     try {
       await deletePatient(patientId);
@@ -122,35 +129,35 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
 
         <Text style={styles.sectionTitle}>📋 Historia wyników</Text>
 
-        {sortedResults.length === 0 ? (
+        {posortowaneWyniki.length === 0 ? (
           <View style={styles.centerStateInline}>
             <Text style={styles.emptyEmoji}>📋</Text>
             <Text style={styles.emptyText}>Brak wyników{`\n`}Dodaj pierwsze badanie</Text>
           </View>
         ) : (
-          sortedResults.map((result) => {
-            const glucoseColor = result.glucose != null ? colorMap[getResultColor('glucose', result.glucose)] : colorMap.green;
-            const bloodPressureColor = result.systolic != null ? colorMap[getResultColor('systolic', result.systolic)] : colorMap.green;
+          posortowaneWyniki.map((wynikBadania) => {
+            const kolorGlukozy = wynikBadania.glucose != null ? colorMap[getResultColor('glucose', wynikBadania.glucose)] : colorMap.green;
+            const kolorCisnienia = wynikBadania.systolic != null ? colorMap[getResultColor('systolic', wynikBadania.systolic)] : colorMap.green;
 
             return (
-              <Card key={result.id ?? result.date} style={styles.resultCard} mode="elevated">
+              <Card key={wynikBadania.id ?? wynikBadania.date} style={styles.resultCard} mode="elevated">
                 <Card.Content>
-                  <Text style={styles.resultDate}>{formatDate(result.date)}</Text>
-                  {result.glucose != null ? (
+                  <Text style={styles.resultDate}>{formatDate(wynikBadania.date)}</Text>
+                  {wynikBadania.glucose != null ? (
                     <View style={styles.resultRow}>
-                      <View style={[styles.dot, { backgroundColor: glucoseColor }]} />
-                      <Text style={styles.resultText}>{`Glukoza: ${result.glucose}`}</Text>
+                      <View style={[styles.dot, { backgroundColor: kolorGlukozy }]} />
+                      <Text style={styles.resultText}>{`Glukoza: ${wynikBadania.glucose}`}</Text>
                     </View>
                   ) : null}
-                  {result.systolic != null || result.diastolic != null ? (
+                  {wynikBadania.systolic != null || wynikBadania.diastolic != null ? (
                     <View style={styles.resultRow}>
-                      <View style={[styles.dot, { backgroundColor: bloodPressureColor }]} />
-                      <Text style={styles.resultText}>{`Ciśnienie: ${result.systolic ?? '-'} / ${result.diastolic ?? '-'}`}</Text>
+                      <View style={[styles.dot, { backgroundColor: kolorCisnienia }]} />
+                      <Text style={styles.resultText}>{`Ciśnienie: ${wynikBadania.systolic ?? '-'} / ${wynikBadania.diastolic ?? '-'}`}</Text>
                     </View>
                   ) : null}
-                  {result.photoUri ? (
-                    <Pressable style={styles.photoThumbWrap} onPress={() => setSelectedPhoto(result.photoUri ?? '')}>
-                      <Image source={{ uri: result.photoUri }} style={styles.photoThumb} />
+                  {wynikBadania.photoUri ? (
+                    <Pressable style={styles.photoThumbWrap} onPress={() => setSelectedPhoto(wynikBadania.photoUri ?? '')}>
+                      <Image source={{ uri: wynikBadania.photoUri }} style={styles.photoThumb} />
                     </Pressable>
                   ) : null}
                 </Card.Content>
@@ -159,8 +166,8 @@ export default function PatientDetailScreen({ navigation, route }: Props) {
           })
         )}
 
-        <ResultChart results={sortedResults} field="glucose" label="Glukoza (mg/dL)" color="#1976D2" />
-        <ResultChart results={sortedResults} field="systolic" label="Ciśnienie skurczowe (mmHg)" color="#D32F2F" />
+        <ResultChart results={posortowaneWyniki} field="glucose" label="Glukoza (mg/dL)" color="#1976D2" />
+        <ResultChart results={posortowaneWyniki} field="systolic" label="Ciśnienie skurczowe (mmHg)" color="#D32F2F" />
 
         <Button mode="contained" onPress={() => navigation.navigate('AddResult', { patientId })} style={styles.button} contentStyle={styles.buttonContent}>
           ➕ Dodaj wyniki

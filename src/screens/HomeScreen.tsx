@@ -10,6 +10,7 @@ import type { RootStackParamList } from '../types';
 type Navigation = StackNavigationProp<RootStackParamList, 'Home'>;
 
 export default function HomeScreen() {
+  // Kierujemy użytkownika do głównych akcji z ekranu startowego.
   const navigation = useNavigation<Navigation>();
 
   return (
@@ -17,7 +18,7 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <View style={styles.hero}>
         <Text style={styles.emoji}>🏥</Text>
-        <Text style={styles.title}>MediNote</Text>
+        <Text style={styles.title}>Mediq</Text>
         <Text style={styles.subtitle}>Mobilna Karta Pacjenta</Text>
       </View>
 
