@@ -21,7 +21,7 @@ Run
 ```bash
 npm install
 npx expo start
-
+```
 -Polski
 
 Mediq to mobilna aplikacja dla lekarzy, która działa offline.  
