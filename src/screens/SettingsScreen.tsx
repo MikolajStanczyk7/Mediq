@@ -1,13 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { Button, Card, Chip, Dialog, Divider, Portal, Snackbar, Switch, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { deleteAllPatients, deleteAllResults, getAllPatients, getResultsByPatient } from '../database/db';
 import type { Patient, RootStackParamList } from '../types';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type Props = StackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -33,10 +33,10 @@ export default function SettingsScreen({ navigation }: Props) {
     }
   }, []);
 
-  // Wczytujemy statystyki przy montowaniu komponentu
-  useState(() => {
+  // Wczytujemy statystyki po zamontowaniu komponentu.
+  useEffect(() => {
     loadDbStats();
-  });
+  }, [loadDbStats]);
 
   // Obsługujemy przełącznik trybu ciemnego
   const handleDarkModeToggle = () => {
@@ -70,17 +70,17 @@ export default function SettingsScreen({ navigation }: Props) {
         {/* SECTION 1: About App */}
         <Card style={styles.card} mode="elevated">
           <Card.Content>
-            <Text style={styles.sectionTitle}>ℹ️ O aplikacji</Text>
+            <Text style={styles.sectionTitle}>O aplikacji</Text>
             <Text style={styles.appName}>Mediq</Text>
             <Text style={styles.appSubtitle}>Mobilna Karta Pacjenta</Text>
             <Text style={styles.version}>Wersja 1.0.0</Text>
             <Text style={styles.description}>
-              Aplikacja stworzona na konkurs Złota Apka 2025 w Kaliszu. Umożliwia lekarzom zarządzanie kartami pacjentów offline.
+              Aplikacja stworzona na konkurs Złota Apka 2026 w Kaliszu. Umożliwia lekarzom zarządzanie kartami pacjentów offline.
             </Text>
             <Divider style={styles.dividerStyle} />
             <View style={styles.creditRow}>
-              <MaterialCommunityIcons name="school" size={18} color="#1976D2" />
-              <Text style={styles.creditText}>Złota Apka 2025 • Kalisz</Text>
+              <Text style={styles.creditIcon}>🎓</Text>
+              <Text style={styles.creditText}>Złota Apka 2026 • Kalisz</Text>
             </View>
           </Card.Content>
         </Card>
@@ -90,7 +90,6 @@ export default function SettingsScreen({ navigation }: Props) {
           <Card.Content>
             <Text style={styles.sectionTitle}>⚙️ Ustawienia</Text>
             <View style={styles.settingRow}>
-              <MaterialCommunityIcons name="weather-night" size={24} color="#1976D2" />
               <Text style={styles.settingLabel}>Tryb ciemny</Text>
               <Switch value={darkMode} onValueChange={handleDarkModeToggle} />
             </View>
@@ -100,11 +99,10 @@ export default function SettingsScreen({ navigation }: Props) {
         {/* SECTION 3: Database */}
         <Card style={styles.card} mode="elevated">
           <Card.Content>
-            <Text style={styles.sectionTitle}>🗄️ Baza danych</Text>
+            <Text style={styles.sectionTitle}>Baza danych</Text>
 
             <View style={styles.dbRow}>
               <View style={styles.dbInfo}>
-                <MaterialCommunityIcons name="database" size={24} color="#1976D2" />
                 <Text style={styles.dbLabel}>Lokalna baza SQLite</Text>
               </View>
               <Chip mode="flat" style={styles.activeChip} textStyle={styles.activeChipText}>
@@ -215,6 +213,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  creditIcon: {
+    fontSize: 18,
+  },
   creditText: {
     fontSize: 13,
     color: '#616161',
@@ -225,6 +226,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 8,
+  },
+  settingIcon: {
+    fontSize: 22,
   },
   settingLabel: {
     fontSize: 15,
@@ -242,6 +246,9 @@ const styles = StyleSheet.create({
   dbInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  dbIcon: {
+    fontSize: 22,
   },
   dbLabel: {
     fontSize: 15,

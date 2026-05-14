@@ -5,7 +5,8 @@ import { HelperText, Snackbar, TextInput, Button, ActivityIndicator } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { StackScreenProps } from '@react-navigation/stack';
 
-import { insertPatient } from '../database/db';
+import { insertPatient, getPatientById, updatePatient } from '../database/db';
+import type { Patient } from '../types';
 import type { RootStackParamList } from '../types';
 
 type Props = StackScreenProps<RootStackParamList, 'AddPatient'>;
@@ -38,7 +39,7 @@ function jestPoprawnaGrupaKrwi(wartosc: string): boolean {
   return BLOOD_TYPES.includes(wartosc.trim().toUpperCase());
 }
 
-export default function AddPatientScreen({ navigation }: Props) {
+export default function AddPatientScreen({ navigation, route }: Props) {
   // Przechowujemy wartości formularza w stanie lokalnym.
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -58,6 +59,31 @@ export default function AddPatientScreen({ navigation }: Props) {
       Keyboard.dismiss();
     };
   }, []);
+
+  // Jeśli mamy parametry, wczytujemy istniejącego pacjenta do edycji.
+  useEffect(() => {
+    const loadForEdit = async () => {
+      const patientId = route.params?.patientId;
+      if (patientId) {
+        try {
+          const existing = await getPatientById(patientId);
+          if (existing) {
+            setFirstName(existing.firstName ?? '');
+            setLastName(existing.lastName ?? '');
+            setPesel(existing.pesel ?? '');
+            setBirthDate(existing.birthDate ?? '');
+            setBloodType(existing.bloodType ?? '');
+            setAllergies(existing.allergies ?? '');
+            setDiseases(existing.diseases ?? '');
+          }
+        } catch (error) {
+          console.error('Failed to load patient for edit', error);
+        }
+      }
+    };
+
+    loadForEdit();
+  }, [route.params]);
 
   // Walidujemy dane pacjenta przed zapisem.
   const validate = (): boolean => {
@@ -95,16 +121,30 @@ export default function AddPatientScreen({ navigation }: Props) {
 
     try {
       setSaving(true);
-      await insertPatient({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        pesel: pesel.trim(),
-        birthDate: birthDate.trim(),
-        bloodType: bloodType.trim().toUpperCase(),
-        allergies: allergies.trim(),
-        diseases: diseases.trim(),
-      });
-      setSnackbarMessage('✅ Pacjent został zapisany');
+      const patientId = route.params?.patientId;
+      if (patientId) {
+        await updatePatient(patientId, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          pesel: pesel.trim(),
+          birthDate: birthDate.trim(),
+          bloodType: bloodType.trim().toUpperCase(),
+          allergies: allergies.trim(),
+          diseases: diseases.trim(),
+        } as Patient);
+        setSnackbarMessage('✅ Pacjent został zaktualizowany');
+      } else {
+        await insertPatient({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          pesel: pesel.trim(),
+          birthDate: birthDate.trim(),
+          bloodType: bloodType.trim().toUpperCase(),
+          allergies: allergies.trim(),
+          diseases: diseases.trim(),
+        });
+        setSnackbarMessage('✅ Pacjent został zapisany');
+      }
       setSnackbarVisible(true);
       setTimeout(() => {
         navigation.navigate('PatientList');
@@ -143,7 +183,7 @@ export default function AddPatientScreen({ navigation }: Props) {
             <TextInput label="Choroby przewlekłe" placeholder="np. cukrzyca typu 2, nadciśnienie" mode="outlined" value={diseases} onChangeText={setDiseases} multiline style={styles.input} />
 
             <Button mode="contained" onPress={handleSave} style={styles.button} contentStyle={styles.buttonContent} disabled={saving}>
-              {saving ? <ActivityIndicator animating color="#FFFFFF" /> : 'Zapisz pacjenta'}
+              {saving ? <ActivityIndicator animating color="#FFFFFF" /> : route.params?.patientId ? 'Zaktualizuj pacjenta' : 'Zapisz pacjenta'}
             </Button>
           </ScrollView>
         </KeyboardAvoidingView>

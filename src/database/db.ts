@@ -162,3 +162,25 @@ export async function deleteAllPatients(): Promise<void> {
     throw error;
   }
 }
+
+// Aktualizujemy istniejącego pacjenta po id.
+export async function updatePatient(id: number, pacjent: Patient): Promise<void> {
+  try {
+    await db.runAsync(
+      `UPDATE patients SET firstName = ?, lastName = ?, pesel = ?, birthDate = ?, bloodType = ?, allergies = ?, diseases = ? WHERE id = ?`,
+      [
+        pacjent.firstName,
+        pacjent.lastName,
+        pacjent.pesel,
+        pacjent.birthDate ?? '',
+        pacjent.bloodType ?? '',
+        pacjent.allergies ?? '',
+        pacjent.diseases ?? '',
+        id,
+      ],
+    );
+  } catch (error) {
+    console.error(`Failed to update patient with id ${id}`, error);
+    throw error;
+  }
+}

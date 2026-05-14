@@ -41,7 +41,7 @@ export default function HomeScreen() {
         <Divider style={styles.divider} />
       </View>
 
-      <Text style={styles.credit}>Złota Apka 2025 • Kalisz</Text>
+      <Text style={styles.credit}>Złota Apka 2026 • Kalisz</Text>
     </SafeAreaView>
   );
 }

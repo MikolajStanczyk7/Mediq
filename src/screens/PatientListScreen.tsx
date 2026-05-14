@@ -3,9 +3,10 @@ import { FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Card, FAB, Snackbar, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Card, FAB, Snackbar, Text, TextInput, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+// Use require to avoid missing type declaration for vector icons in this workspace
+const MaterialCommunityIcons: any = require('react-native-vector-icons/MaterialCommunityIcons');
 
 import { getAllPatients } from '../database/db';
 import type { Patient, RootStackParamList } from '../types';
@@ -78,14 +79,27 @@ export default function PatientListScreen({ navigation }: Props) {
         keyExtractor={(pacjent) => String(pacjent.id ?? pacjent.pesel)}
         contentContainerStyle={styles.listContent}
         renderItem={({ item: pacjent }) => (
-          <Card style={styles.card} mode="elevated" onPress={() => navigation.navigate('PatientDetail', { patientId: pacjent.id ?? 0 })}>
+          <Card style={styles.card} mode="elevated">
             <Card.Content style={[styles.cardContent, { paddingVertical: 4 }]}>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{`${pacjent.lastName} ${pacjent.firstName}`}</Text>
                 <Text style={styles.cardSubtitle}>{`PESEL: ${pacjent.pesel}`}</Text>
                 {pacjent.bloodType ? <Text style={styles.cardSubtitle}>{`Grupa krwi: ${pacjent.bloodType}`}</Text> : null}
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={28} color="#9E9E9E" />
+              <View style={styles.cardIcons}>
+                <IconButton
+                  icon="pencil"
+                  size={20}
+                  iconColor="#1976D2"
+                  onPress={() => navigation.navigate('AddPatient', { patientId: pacjent.id })}
+                />
+                <IconButton
+                  icon="chevron-right"
+                  size={24}
+                  iconColor="#9E9E9E"
+                  onPress={() => navigation.navigate('PatientDetail', { patientId: pacjent.id ?? 0 })}
+                />
+              </View>
             </Card.Content>
           </Card>
         )}
@@ -150,6 +164,10 @@ const styles = StyleSheet.create({
   cardText: {
     flex: 1,
     paddingRight: 12,
+  },
+  cardIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cardTitle: {
     fontSize: 16,

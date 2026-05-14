@@ -28,7 +28,7 @@ export type RootStackParamList = {
   Home: undefined;
   PatientList: undefined;
   PatientDetail: { patientId: number };
-  AddPatient: undefined;
+  AddPatient: { patientId?: number } | undefined;
   AddResult: { patientId: number };
   Statistics: undefined;
   Settings: undefined;
