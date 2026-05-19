@@ -22,7 +22,7 @@ Run
 npm install
 npx expo start
 ```
-Link to download the APK (just download it to your phone and run it):
+Link to download the APK file. Just download it to your phone and run it (build valid until June 1, 2026).
 https://expo.dev/accounts/mikestan777/projects/Mediq/builds/26bbcad3-5422-4086-9e14-33a57a622b47
 
 -Polski
@@ -48,5 +48,5 @@ Uruchomienie
 npm install
 npx expo start
 ```
-Link do pobrania pliku APK (wystarczy pobrać plik na telefon i uruchomić):
+Link do pobrania pliku APK. Wystarczy pobrać go na telefon i uruchomić (build ważny do 1 czerwca 2026 r.):
 https://expo.dev/accounts/mikestan777/projects/Mediq/builds/26bbcad3-5422-4086-9e14-33a57a622b47
