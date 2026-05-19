@@ -22,6 +22,9 @@ Run
 npm install
 npx expo start
 ```
+Link to download the APK (just download it to your phone and run it):
+https://expo.dev/accounts/mikestan777/projects/Mediq/builds/26bbcad3-5422-4086-9e14-33a57a622b47
+
 -Polski
 
 Mediq to mobilna aplikacja dla lekarzy, która działa offline.  
@@ -44,3 +47,6 @@ Uruchomienie
 ```bash
 npm install
 npx expo start
+```
+Link do pobrania pliku APK (wystarczy pobrać plik na telefon i uruchomić):
+https://expo.dev/accounts/mikestan777/projects/Mediq/builds/26bbcad3-5422-4086-9e14-33a57a622b47
